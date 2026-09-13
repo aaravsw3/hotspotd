@@ -1,0 +1,22 @@
+# build output
+bin/
+obj/
+
+# MSVC intermediates
+*.obj
+*.exe
+*.pdb
+*.ilk
+*.idb
+*.exp
+*.lib
+*.res
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# stray file created by a shell redirect to the reserved NUL device name;
+# git cannot check this out on Windows, so it must never be committed
+nul
