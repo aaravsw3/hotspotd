@@ -39,6 +39,12 @@ if (Test-Path "$InstallDir\hotspotd.exe") {
     Ok "service removed via sc.exe"
 }
 
+$orphans = Get-Process -Name hotspotd -ErrorAction SilentlyContinue
+if ($orphans) {
+    $orphans | Stop-Process -Force -ErrorAction SilentlyContinue
+    Ok "stopped $($orphans.Count) orphaned hotspotd process(es)"
+}
+
 Step "Removing the blackout helper"
 Unregister-ScheduledTask -TaskName 'HotspotGuard-Blackout' -Confirm:$false -ErrorAction SilentlyContinue
 Get-Process -Name blackout -ErrorAction SilentlyContinue | Stop-Process -Force

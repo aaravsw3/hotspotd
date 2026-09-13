@@ -55,6 +55,15 @@ if ($existing) {
 }
 Get-Process -Name blackout -ErrorAction SilentlyContinue | Stop-Process -Force
 
+# DeleteService only deregisters. If a previous run left the watchdog running as an
+# orphan it still holds the power request and locks the .exe, so clear it out.
+$orphans = Get-Process -Name hotspotd -ErrorAction SilentlyContinue
+if ($orphans) {
+    $orphans | Stop-Process -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 1
+    Ok "stopped $($orphans.Count) orphaned hotspotd process(es)"
+}
+
 # A stopping service keeps its .exe locked for a moment after DeleteService returns,
 # so copy on a retry loop rather than assuming the handle is already gone.
 function Copy-Binary($src, $dest) {
