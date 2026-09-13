@@ -319,7 +319,16 @@ static int UninstallService()
 
     SERVICE_STATUS ss{};
     ControlService(svc, SERVICE_CONTROL_STOP, &ss);
-    Sleep(1000);
+
+    // DeleteService only marks the service for deletion; the process keeps running
+    // (and keeps this .exe locked) until it actually stops. Wait for that.
+    for (int i = 0; i < 60; ++i) {
+        if (!QueryServiceStatus(svc, &ss)) break;
+        if (ss.dwCurrentState == SERVICE_STOPPED) break;
+        Sleep(250);
+    }
+    if (ss.dwCurrentState != SERVICE_STOPPED)
+        wprintf(L"Warning: service did not reach STOPPED within 15s.\n");
 
     if (!DeleteService(svc)) wprintf(L"DeleteService failed err=%lu\n", GetLastError());
     else                     wprintf(L"Service '%s' removed.\n", kServiceName);

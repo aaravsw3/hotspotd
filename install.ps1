@@ -52,12 +52,25 @@ if ($existing) {
         & sc.exe stop   hotspotd 2>&1 | Out-Null
         & sc.exe delete hotspotd 2>&1 | Out-Null
     }
-    Start-Sleep -Seconds 2
 }
 Get-Process -Name blackout -ErrorAction SilentlyContinue | Stop-Process -Force
 
-Copy-Item "$srcBin\hotspotd.exe" $InstallDir -Force
-if (Test-Path "$srcBin\blackout.exe") { Copy-Item "$srcBin\blackout.exe" $InstallDir -Force }
+# A stopping service keeps its .exe locked for a moment after DeleteService returns,
+# so copy on a retry loop rather than assuming the handle is already gone.
+function Copy-Binary($src, $dest) {
+    for ($i = 0; $i -lt 40; $i++) {
+        try {
+            Copy-Item $src $dest -Force -ErrorAction Stop
+            return
+        } catch {
+            Start-Sleep -Milliseconds 500
+        }
+    }
+    throw "Could not write $dest - still locked after 20s. Stop the hotspotd service and retry."
+}
+
+Copy-Binary "$srcBin\hotspotd.exe" "$InstallDir\hotspotd.exe"
+if (Test-Path "$srcBin\blackout.exe") { Copy-Binary "$srcBin\blackout.exe" "$InstallDir\blackout.exe" }
 Ok "binaries copied"
 
 # ---------------------------------------------------------------- 2. hotspot fail-safes
